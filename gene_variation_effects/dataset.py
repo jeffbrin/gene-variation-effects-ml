@@ -4,26 +4,43 @@ from loguru import logger
 from tqdm import tqdm
 import typer
 
-from gene_variation_effects.config import PROCESSED_DATA_DIR, RAW_DATA_DIR
+import pandas as pd
+import numpy as np
+
+from config import DATA_DIR
 
 app = typer.Typer()
 
 
 @app.command()
-def main(
-    # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
-    input_path: Path = RAW_DATA_DIR / "dataset.csv",
-    output_path: Path = PROCESSED_DATA_DIR / "dataset.csv",
-    # ----------------------------------------------
-):
-    # ---- REPLACE THIS WITH YOUR OWN CODE ----
-    logger.info("Processing dataset...")
-    for i in tqdm(range(10), total=10):
-        if i == 5:
-            logger.info("Something happened for iteration 5.")
-    logger.success("Processing dataset complete.")
-    # -----------------------------------------
+def main(input_path: Path = DATA_DIR / "variant_summary.txt",
+         output_path: Path = DATA_DIR / "dataset.csv"
+         ):
+    logger.info("Generating raw data")
+
+    df = pd.read_csv(input_path, sep = "\t", low_memory = False)
+
+    logger.info("Cleaning raw data")
+
+    useless_columns = ['#AlleleID', 'GeneID', 'Name', 'HGNC_ID', 'RS# (dbSNP)', 'nsv/esv (dbVar)', 'RCVaccession',
+                       'PhenotypeIDS', 'OriginSimple', 'ReferenceAllele', 'AlternateAllele', 'Guidelines', 'OtherIDs',
+                       'VariationID', 'SomaticClinicalImpactLastEvaluated', 'SomaticClinicalImpact', 'Oncogenicity', 
+                       'OncogenicityLastEvaluated', 'ReviewStatusOncogenicity', 'SCVsForAggregateGermlineClassification', 'ReviewStatus',
+                       'SCVsForAggregateGermlineClassification', 'SCVsForAggregateSomaticClinicalImpact', 'SCVsForAggregateOncogenicityClassification', 'SubmitterCategories',
+                       'ClinicalSignificance', 'LastEvaluated', 'PhenotypeList', 'Assembly', 'NumberSubmitters', 'TestedInGTR', 'ReviewStatusClinicalImpact', 'Origin',
+                       'ChromosomeAccession'
+                       ]
+    
+    df.drop(columns = useless_columns, inplace = True)
+    df = df.loc[df['ClinSigSimple'] != -1]
+    df = df.replace(['na', '-', -1], np.nan)
+    df['VariantLength'] = df['Stop'] - df['Start']
+    df.drop(column = ['Start', 'Stop'], inplace = True)
+    df.to_csv(output_path)
+
+    logger.success("Features generation complete.")
 
 
 if __name__ == "__main__":
     app()
+    main()
