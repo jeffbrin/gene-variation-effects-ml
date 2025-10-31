@@ -12,14 +12,14 @@ class NNPipeLine():
         # Design matrix index to feature str mapping
         self.var_to_idx = dict(zip(column_names, range(len(column_names))))
 
-        onehot_features = ['Type', 'ChromosomeAccession', 'Chromosome']
+        onehot_features = ['Type']
         self.onehot_idx = [self.var_to_idx.get(key) for key in onehot_features]
         
-        emb_features = ['GeneSymbol', 'Cytogenetic', 'ReferenceAlleleVCF', 'AlternateAlleleVCF']
+        emb_features = ['GeneSymbol']
         self.emb_idx = [self.var_to_idx.get(key) for key in emb_features]
 
-        numerical_features = 'VariantLength'
-        self.numerical_idx = [self.var_to_idx.get(numerical_features)]
+        numerical_features = ['VariantLength', 'VariantLengthDifference']
+        self.numerical_idx = [self.var_to_idx.get(key) for key in numerical_features]
 
     def fit_for_all(self, X_train : np.ndarray) -> tuple[np.ndarray, Pipeline]:
         """

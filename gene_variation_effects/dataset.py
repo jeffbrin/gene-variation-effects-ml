@@ -28,14 +28,19 @@ def main(input_path: Path = DATA_DIR / "variant_summary.txt",
                        'OncogenicityLastEvaluated', 'ReviewStatusOncogenicity', 'SCVsForAggregateGermlineClassification', 'ReviewStatus',
                        'SCVsForAggregateGermlineClassification', 'SCVsForAggregateSomaticClinicalImpact', 'SCVsForAggregateOncogenicityClassification', 'SubmitterCategories',
                        'ClinicalSignificance', 'LastEvaluated', 'PhenotypeList', 'Assembly', 'NumberSubmitters', 'TestedInGTR', 'ReviewStatusClinicalImpact', 'Origin',
-                       'ChromosomeAccession'
+                       'ChromosomeAccession', 'Cytogenetic', 'Chromosome', 'PositionVCF'
                        ]
-    
+
     df.drop(columns = useless_columns, inplace = True)
     df = df.loc[df['ClinSigSimple'] != -1]
     df = df.replace(['na', '-', -1], np.nan)
     df['VariantLength'] = df['Stop'] - df['Start']
-    df.drop(column = ['Start', 'Stop'], inplace = True)
+    df['VariantLengthDifference'] = [
+        len(alt) - len(ref) if not any(pd.isna([alt, ref])) else np.nan 
+        for _, (alt, ref) in df[['AlternateAlleleVCF', 'ReferenceAlleleVCF']].iterrows()
+        ]
+    df.drop(columns = ['Start', 'Stop'], inplace = True)
+    df.drop(columns = ['AlternateAlleleVCF', 'ReferenceAlleleVCF'], inplace = True)
     df.to_csv(output_path)
 
     logger.success("Features generation complete.")
