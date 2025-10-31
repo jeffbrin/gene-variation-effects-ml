@@ -9,7 +9,6 @@ from gene_variation_effects.config import MODELS_DIR, PROCESSED_DATA_DIR
 app = typer.Typer()
 
 
-@app.command()
 def main(
     # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
     data : Path = PROCESSED_DATA_DIR / "features.csv",
@@ -23,7 +22,3 @@ def main(
             logger.info("Something happened for iteration 5.")
     logger.success("Modeling training complete.")
     # -----------------------------------------
-
-
-if __name__ == "__main__":
-    app()

@@ -17,6 +17,7 @@ classifiers = [
 ]
 dependencies = [
     "ipython",
+    "jupyter>=1.1.1",
     "jupyterlab",
     "loguru",
     "matplotlib",
@@ -28,6 +29,7 @@ dependencies = [
     "python-dotenv",
     "ruff",
     "scikit-learn",
+    "torch>=2.9.0",
     "tqdm",
     "typer",
 ]

@@ -41,7 +41,7 @@ def main(input_path: Path = DATA_DIR / "variant_summary.txt",
         ]
     df.drop(columns = ['Start', 'Stop'], inplace = True)
     df.drop(columns = ['AlternateAlleleVCF', 'ReferenceAlleleVCF'], inplace = True)
-    df.to_csv(output_path)
+    df.to_csv(output_path, index=False)
 
     logger.success("Features generation complete.")
 

@@ -14,8 +14,8 @@ def data_shuffle_split(X : np.ndarray,
     Args:
         X (np.ndarray): Design matrix with i examples and j features
         y (np.ndarray): Target array of length i
-        test_size (float): Proportion of the test set
-        val_size (float): Proportion of the validation set AFTER splitting for test set
+        test_size (float): Proportion of the test set (0-1)
+        val_size (float): Proportion of the validation set AFTER splitting for test set (0-1)
         seed (int): random seed to be fixed
 
     Returns:
