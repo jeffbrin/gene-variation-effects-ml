@@ -68,3 +68,4 @@ class NNPipeLine():
             remainder = 'passthrough'
         )
         return feature_processor.fit_transform(X_train), feature_processor    
+    

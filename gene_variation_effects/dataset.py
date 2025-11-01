@@ -41,6 +41,9 @@ def main(input_path: Path = DATA_DIR / "variant_summary.txt",
         ]
     df.drop(columns = ['Start', 'Stop'], inplace = True)
     df.drop(columns = ['AlternateAlleleVCF', 'ReferenceAlleleVCF'], inplace = True)
+
+    # nans are destroying out output
+    df.dropna(axis="index", inplace=True)
     df.to_csv(output_path, index=False)
 
     logger.success("Features generation complete.")
