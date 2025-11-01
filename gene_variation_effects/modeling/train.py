@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
 
-from typing import Optional
+from typing import Optional, Any
 
 def run_training_loop(
         model: torch.nn.Module, 
@@ -15,8 +15,40 @@ def run_training_loop(
         embedding_features_columns: list[int],
         patience: int = 5,
         criterion: Optional[torch.nn.modules.loss._Loss] = None,
-        optimizer: Optional[torch.optim.Optimizer] = None) -> ...:
+        optimizer: Optional[torch.optim.Optimizer] = None
+        ) -> tuple[dict[str, Any], list[torch.Tensor], list[torch.Tensor], list[torch.Tensor], list[torch.Tensor]]:
+    """
+    Trains the given model.
 
+    Parameters
+    ----------
+    model : torch.nn.Module
+        The model to be trained
+    batch_size : int
+        The number of predictions per epoch
+    training_X : torch.Tensor
+        The training input data
+    validation_X : torch.Tensor
+        The validation input data
+    training_labels : np.ndarray
+        The correct predictions for the given training_X input data. Must be in shape (X, 1), where X is the number of rows in the input.
+    validation_labels : np.ndarray
+        The correct predictions for the given validation_X input data. Must be in shape (X, 1), where X is the number of rows in the input.
+    embedding_features_columns : list[int]
+        The columns of the input data which use embedded encoding
+    patience : int, optional
+        The number of epochs which can pass without improving on the best validation loss before ending the training, by default 5
+    criterion : Optional[torch.nn.modules.loss._Loss], optional
+        The loss function, by default None
+    optimizer : Optional[torch.optim.Optimizer], optional
+        The desired optimizer (Ex. Adam), by default None
+
+    Returns
+    -------
+    tuple[dict[str, Any], list[torch.Tensor], list[torch.Tensor], list[torch.Tensor], list[torch.Tensor]]
+        A dictionary representation of the model parameters with the best validation loss, training losses by epoch, validation losses by epoch, training accuracy by epoch, and validation accuracy by epoch.
+    """
+    
     model.train()
 
     if criterion is None:
