@@ -3,7 +3,7 @@ import torch.nn as nn
 import numpy as np
 
 class MLP(nn.Module):
-    def __init__(self, embedding_dimension_mapping : np.ndarray, hidden_sizes : list[int], input_size : int) -> None:
+    def __init__(self, embedding_dimension_mapping : np.ndarray, hidden_sizes : list[int], input_size : int, dropout: float = 0.1) -> None:
         """
         Initalizes neural network and embedding layers for high cardinality categorical variables
         
@@ -32,6 +32,7 @@ class MLP(nn.Module):
                 layers.append(nn.Linear(hidden_sizes[layer], 1))
             else:
                 layers.append(nn.Linear(hidden_sizes[layer], hidden_sizes[layer + 1]))
+                layers.append(nn.Dropout(dropout))
         
         self.layers = nn.ModuleList(layers)
         
