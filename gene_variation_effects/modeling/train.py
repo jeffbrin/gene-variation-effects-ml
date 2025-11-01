@@ -25,20 +25,31 @@ def run_training_loop(
     if optimizer is None:
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
+    training_losses = []
+    validation_losses = []
     for epoch in range(epochs):
         epoch_input = get_current_epoch_data(training_X, epoch, epochs)
         epoch_training_labels = get_current_epoch_data(training_labels, epoch, epochs)
-        epoch_valdiation = get_current_epoch_data(validation_X, epoch, epochs)
+        epoch_validation = get_current_epoch_data(validation_X, epoch, epochs)
         epoch_validation_labels = get_current_epoch_data(validation_labels, epoch, epochs)
 
 
-        output = model(epoch_input, embedding_features_columns)
+        training_predictions = model(epoch_input, embedding_features_columns)
         # logits = model(x, embedding_features_columns)
         # logger.info(torch.isnan(output).any(), torch.isinf(output).any())
-        loss = criterion(output, epoch_training_labels)
+        loss = criterion(training_predictions, epoch_training_labels)
         loss.backward()
         optimizer.step()
 
+        validation_predictions = model(epoch_validation, embedding_features_columns)
+        validation_loss = criterion(validation_predictions, epoch_validation_labels)
+
+        training_losses.append(loss)
+        validation_losses.append(validation_loss)
+
         logger.info(f"Epoch {epoch}: loss={loss.item():.4f}")
+        logger.info(f"Epoch {epoch}: validation loss={loss.item():.4f}")
+
+    
 
         

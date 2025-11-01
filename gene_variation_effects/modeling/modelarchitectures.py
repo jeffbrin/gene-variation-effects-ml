@@ -41,6 +41,8 @@ class MLP(nn.Module):
         embedded_features_tensors = []
         for emb, column in zip(self.embedding_networks, embedding_features_columns):
             feature_data = x[:,column].type(torch.long)
+            # Add 1 to each feature since unknown features are set to -1, which emb doesn't like
+            feature_data += 1
             embedding = emb(feature_data)
             embedded_features_tensors.append(torch.Tensor(embedding))
 
