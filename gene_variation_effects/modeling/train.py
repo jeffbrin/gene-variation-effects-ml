@@ -16,6 +16,8 @@ def run_training_loop(
         validation_labels: np.ndarray,
         embedding_features_columns: list[int],
         patience: int = 5,
+        positive_threshold: float = 0.5,
+        positive_class_loss_weight: float = None,
         criterion: Optional[torch.nn.modules.loss._Loss] = None,
         optimizer: Optional[torch.optim.Optimizer] = None
         ) -> tuple[dict[str, Any], list[torch.Tensor], list[torch.Tensor], list[torch.Tensor], list[torch.Tensor]]:
@@ -52,15 +54,11 @@ def run_training_loop(
     """
     
     def logits_to_prediction(logits: torch.Tensor) -> torch.Tensor:
-        return (torch.sigmoid(logits) >= PATHOGENIC_THRESHOLD).type(torch.int)
+        return (torch.sigmoid(logits) >= positive_threshold).type(torch.int)
 
     model.train()
-    PATHOGENIC_THRESHOLD = 0.5
-
-    if criterion is None:
-        criterion = torch.nn.BCEWithLogitsLoss(weight=torch.tensor(1.0)) # Increase positive class weight
-    if optimizer is None:
-        optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model.to(device)
 
     training_losses = []
     validation_losses = []
@@ -76,8 +74,18 @@ def run_training_loop(
     class_weights = 1 / bincount # 9:1 ratio in dataset
     sample_weights_training = class_weights[training_labels.flatten().long()]
     training_sampler = WeightedRandomSampler(sample_weights_training, len(training_labels), replacement=True)
+    # training_sampler = None
     sample_weights_val = class_weights[validation_labels.flatten().long()]
     val_sampler = WeightedRandomSampler(sample_weights_val, len(validation_labels), replacement=True)
+    # val_sampler = None
+
+    if criterion is None:
+        weight = bincount[0] / bincount[1] if positive_class_loss_weight is None else positive_class_loss_weight
+        # weight = bincount[0] / bincount[1]
+        criterion = torch.nn.BCEWithLogitsLoss(weight=weight) # Increase positive class weight
+    if optimizer is None:
+        optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+
 
     train_loader = DataLoader(training_data, batch_size=batch_size, shuffle=(training_sampler is None), sampler=training_sampler)
     val_loader = DataLoader(validation_data, batch_size=batch_size * 2, sampler=val_sampler)
@@ -89,17 +97,23 @@ def run_training_loop(
 
     for epoch, ((training_X_batch, training_y_batch), (val_X_batch, val_y_batch)) in enumerate(zip(train_loader, val_loader)):
         training_y_batches.append(training_y_batch)
-        val_y_batches.append(training_y_batch)
+        val_y_batches.append(val_y_batch)
         
+        training_X_batch.to(device)
+        val_X_batch.to(device)
+        training_y_batch.to(device)
+        val_y_batch.to(device)
+
+        optimizer.zero_grad()
         training_predictions = model(training_X_batch, embedding_features_columns)
         all_training_predictions_logits.extend(training_predictions.detach())
-        loss = criterion(training_predictions, training_y_batch.detach())
+        loss = criterion(training_predictions, training_y_batch)
         loss.backward()
         optimizer.step()
 
         with torch.no_grad():
             validation_predictions = model(val_X_batch, embedding_features_columns)
-            all_val_predictions_logits.extend(validation_predictions)
+            all_val_predictions_logits.extend(validation_predictions.detach())
             validation_loss = criterion(validation_predictions, val_y_batch)
 
         training_losses.append(loss.detach())
@@ -131,8 +145,8 @@ def run_training_loop(
 
     all_training_predictions = logits_to_prediction(torch.Tensor(all_training_predictions_logits))
     all_val_predictions = logits_to_prediction(torch.Tensor(all_val_predictions_logits))
-    train_confusion_matrix = metrics.confusion_matrix(training_labels[:len(all_training_predictions)], all_training_predictions)
-    val_confusion_matrix = metrics.confusion_matrix(validation_labels[:len(all_val_predictions)], all_val_predictions)
+    train_confusion_matrix = metrics.confusion_matrix(np.array(training_y_batches).flatten(), all_training_predictions)
+    val_confusion_matrix = metrics.confusion_matrix(np.array(val_y_batches).flatten(), all_val_predictions)
     
     # Visualize sampling distribution
     positive_targets_per_batch_training = [sum(batch)[0] for batch in training_y_batches]
