@@ -57,3 +57,5 @@ exactly sure what should be done. For now, I'm excluding PositionVCF and taking 
 ## Potentially useful future features
 - Normalize start with the gene's length to get a start position between 0-1. This might be able to teach the model to identify "hotspots" within the gene if a particular region is more pathogen-inducing. Should be able to get length from here: https://www.ensembl.org/biomart/martview/f472cfd32e9956359032f89e96854f40
 - Look at context around the variation, apparently this can make the reference -> alternate alleles more relevant.
+
+Downloaded phylop file from http://hgdownload.soe.ucsc.edu/goldenPath/hg38/phyloP100way/

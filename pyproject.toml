@@ -16,6 +16,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License"
 ]
 dependencies = [
+    "httplib2>=0.31.0",
     "ipython",
     "jupyter>=1.1.1",
     "jupyterlab",
@@ -26,6 +27,7 @@ dependencies = [
     "numpy",
     "pandas",
     "pip",
+    "pybigwig>=0.3.24",
     "pyliftover>=0.4.1",
     "python-dotenv",
     "ruff",

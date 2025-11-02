@@ -363,6 +363,7 @@ name = "gene-variation-effects"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
+    { name = "httplib2" },
     { name = "ipython" },
     { name = "jupyter" },
     { name = "jupyterlab" },
@@ -373,6 +374,7 @@ dependencies = [
     { name = "numpy" },
     { name = "pandas" },
     { name = "pip" },
+    { name = "pybigwig" },
     { name = "pyliftover" },
     { name = "python-dotenv" },
     { name = "ruff" },
@@ -385,6 +387,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "httplib2", specifier = ">=0.31.0" },
     { name = "ipython" },
     { name = "jupyter", specifier = ">=1.1.1" },
     { name = "jupyterlab" },
@@ -395,6 +398,7 @@ requires-dist = [
     { name = "numpy" },
     { name = "pandas" },
     { name = "pip" },
+    { name = "pybigwig", specifier = ">=0.3.24" },
     { name = "pyliftover", specifier = ">=0.4.1" },
     { name = "python-dotenv" },
     { name = "ruff" },
@@ -437,6 +441,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/06/94/82699a10bca87a5556c9c59b5963f2d039dbd239f25bc2a63907a05a14cb/httpcore-1.0.9.tar.gz", hash = "sha256:6e34463af53fd2ab5d807f399a9b45ea31c3dfa2276f15a2c3f00afff6e176e8", size = 85484, upload-time = "2025-04-24T22:06:22.219Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl", hash = "sha256:2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55", size = 78784, upload-time = "2025-04-24T22:06:20.566Z" },
+]
+
+[[package]]
+name = "httplib2"
+version = "0.31.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyparsing" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/52/77/6653db69c1f7ecfe5e3f9726fdadc981794656fcd7d98c4209fecfea9993/httplib2-0.31.0.tar.gz", hash = "sha256:ac7ab497c50975147d4f7b1ade44becc7df2f8954d42b38b3d69c515f531135c", size = 250759, upload-time = "2025-09-11T12:16:03.403Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8c/a2/0d269db0f6163be503775dc8b6a6fa15820cc9fdc866f6ba608d86b721f2/httplib2-0.31.0-py3-none-any.whl", hash = "sha256:b9cd78abea9b4e43a7714c6e0f8b6b8561a6fc1e95d5dbd367f5bf0ef35f5d24", size = 91148, upload-time = "2025-09-11T12:16:01.803Z" },
 ]
 
 [[package]]
@@ -1507,6 +1523,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/cd/05/0a34433a064256a578f1783a10da6df098ceaa4a57bbeaa96a6c0352786b/pure_eval-0.2.3.tar.gz", hash = "sha256:5f4e983f40564c576c7c8635ae88db5956bb2229d7e9237d03b3c0b0190eaf42", size = 19752, upload-time = "2024-07-21T12:58:21.801Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8e/37/efad0257dc6e593a18957422533ff0f87ede7c9c6ea010a2177d738fb82f/pure_eval-0.2.3-py3-none-any.whl", hash = "sha256:1db8e35b67b3d218d818ae653e27f06c3aa420901fa7b081ca98cbedc874e0d0", size = 11842, upload-time = "2024-07-21T12:58:20.04Z" },
+]
+
+[[package]]
+name = "pybigwig"
+version = "0.3.24"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/d4/3b/c95c24acc022957b0fad73ce9b6431fe3ddf164b6dd742d5b7b03f806457/pybigwig-0.3.24.tar.gz", hash = "sha256:bf0b6a025a77a1d34c9dc8f134f661780407ffea9c53d18f785e5f1e95b4983f", size = 75247, upload-time = "2025-01-17T15:27:25.388Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f1/e0/1845e8b2cbc5dcacdae34404d7ab34dc98fe5ebb57d9e2842b7ccbb96192/pyBigWig-0.3.24-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b341a92e848cc8ece266578c9934bd1cd216893138b44f10f0c11aff03bc389f", size = 187070, upload-time = "2025-01-17T15:27:33.256Z" },
 ]
 
 [[package]]

@@ -1,5 +1,5 @@
 import torch
-from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.data import TensorDataset, DataLoader, WeightedRandomSampler
 import numpy as np
 
 from typing import Optional
@@ -10,6 +10,7 @@ def test_model(
         X: torch.Tensor, 
         labels: np.ndarray,
         embedding_features_columns: list[int],
+        positive_threshold: float = 0.5,
         criterion: Optional[torch.nn.modules.loss._Loss] = None) -> tuple[float, float]:
     """
     Tests the model, returning average loss and accuracy.
@@ -26,6 +27,8 @@ def test_model(
         Labels for desired predictions
     embedding_features_columns : list[int]
         The column indices of features in the X tensor which use embedding
+    positive_threshold : float
+        The value above which a prediction will be considered positive, 0.5 by default.
     criterion : Optional[torch.nn.modules.loss._Loss], optional
         The criterion class used to evaluate loss. Defaults to BCEWithLogitsLoss if None is provided, by default None
 
@@ -39,8 +42,8 @@ def test_model(
 
     # Move this to another file and join with function in train.py
     def logits_to_prediction(logits: torch.Tensor) -> torch.Tensor:
-        return (torch.sigmoid(logits) >= PATHOGENIC_THRESHOLD).type(torch.int)
-    PATHOGENIC_THRESHOLD = 0.5
+        return (torch.sigmoid(logits) >= positive_threshold).type(torch.int)
+    
 
     if criterion is None:
         criterion = torch.nn.BCEWithLogitsLoss()
@@ -51,7 +54,11 @@ def test_model(
     
     test_dataset = TensorDataset(X, labels)
 
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    bincount = torch.bincount(labels.flatten().long())
+    class_weights = 1 / bincount # 9:1 ratio in dataset
+    sample_weights = class_weights[labels.flatten().long()]
+    training_sampler = WeightedRandomSampler(sample_weights, len(labels), replacement=True)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, sampler=training_sampler)
 
     with torch.no_grad():
         for batch_X, batch_y in test_loader:

@@ -88,7 +88,7 @@ def run_training_loop(
 
 
     train_loader = DataLoader(training_data, batch_size=batch_size, shuffle=(training_sampler is None), sampler=training_sampler)
-    val_loader = DataLoader(validation_data, batch_size=batch_size * 2, sampler=val_sampler)
+    val_loader = DataLoader(validation_data, batch_size=batch_size, sampler=val_sampler)
 
     all_training_predictions_logits = []
     all_val_predictions_logits = []
@@ -145,8 +145,8 @@ def run_training_loop(
 
     all_training_predictions = logits_to_prediction(torch.Tensor(all_training_predictions_logits))
     all_val_predictions = logits_to_prediction(torch.Tensor(all_val_predictions_logits))
-    train_confusion_matrix = metrics.confusion_matrix(np.array(training_y_batches).flatten(), all_training_predictions)
-    val_confusion_matrix = metrics.confusion_matrix(np.array(val_y_batches).flatten(), all_val_predictions)
+    train_confusion_matrix = metrics.confusion_matrix(np.concatenate(training_y_batches), all_training_predictions)
+    val_confusion_matrix = metrics.confusion_matrix(np.concatenate(val_y_batches), all_val_predictions)
     
     # Visualize sampling distribution
     positive_targets_per_batch_training = [sum(batch)[0] for batch in training_y_batches]
