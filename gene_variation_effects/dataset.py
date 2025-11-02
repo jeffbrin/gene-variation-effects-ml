@@ -27,7 +27,7 @@ def generate_main_dataset(input_path: Path, output_path: Path):
     logger.info("Cleaning raw data")
 
     useless_columns = ['#AlleleID', 'GeneID', 'Name', 'HGNC_ID', 'RS# (dbSNP)', 'nsv/esv (dbVar)', 'RCVaccession',
-                       'PhenotypeIDS', 'OriginSimple', 'ReferenceAllele', 'AlternateAllele', 'Guidelines', 'OtherIDs',
+                       'PhenotypeIDS', 'ReferenceAllele', 'AlternateAllele', 'Guidelines', 'OtherIDs',
                        'VariationID', 'SomaticClinicalImpactLastEvaluated', 'SomaticClinicalImpact', 'Oncogenicity', 
                        'OncogenicityLastEvaluated', 'ReviewStatusOncogenicity', 'SCVsForAggregateGermlineClassification', 'ReviewStatus',
                        'SCVsForAggregateGermlineClassification', 'SCVsForAggregateSomaticClinicalImpact', 'SCVsForAggregateOncogenicityClassification', 'SubmitterCategories',
@@ -43,7 +43,9 @@ def generate_main_dataset(input_path: Path, output_path: Path):
         len(alt) - len(ref) if not any(pd.isna([alt, ref])) else np.nan 
         for _, (alt, ref) in df[['AlternateAlleleVCF', 'ReferenceAlleleVCF']].iterrows()
         ]
-    df.drop(columns = ['Start', 'Stop'], inplace = True)
+    df['OriginGermline'] = (df['OriginSimple'] == "germline").astype(int)
+
+    df.drop(columns = ['Start', 'Stop', "OriginSimple"], inplace = True)
     df.drop(columns = ['AlternateAlleleVCF', 'ReferenceAlleleVCF'], inplace = True)
 
     # nans are destroying out output
@@ -60,7 +62,7 @@ def generate_BRCA1_dataset(variants_filepath: Path, phylo_scores_filepath: Path,
 
     logger.info("Cleaning raw data")
 
-    columns = ["Type", "ClinSigSimple", "Chromosome", "Start", "Stop", "ReferenceAlleleVCF", "AlternateAlleleVCF"]
+    columns = ["Type", "ClinSigSimple", "Chromosome", "Start", "Stop", "ReferenceAlleleVCF", "AlternateAlleleVCF", "OriginSimple"]
 
     df = df[columns]
     df = df.loc[df['ClinSigSimple'] != -1]
@@ -85,10 +87,11 @@ def generate_BRCA1_dataset(variants_filepath: Path, phylo_scores_filepath: Path,
     # Convert start into relative positon
     df['RelativeStart'] = (df['Start'] - gene_start_position) / gene_sequence_length
     df['ConservationDisruption'] = df['PhyloScore'] * df['VariantLength']
-    df['DistanceFromEnd'] = [min(start-gene_start_position, gene_end_position-end) for start, end in zip(df['Start'], df['Stop'])]
+    df[' '] = [min(start-gene_start_position, gene_end_position-end) for start, end in zip(df['Start'], df['Stop'])]
+    df['OriginGermline'] = (df['OriginSimple'] == "germline").astype(int)
 
     # nans are destroying out output
-    df.drop(columns = ['Start', 'Stop', "Chromosome"], inplace = True)
+    df.drop(columns = ['Start', 'Stop', "Chromosome", "OriginSimple"], inplace = True)
     df.dropna(axis="index", inplace=True)
     df.to_csv(output_path, index=False)
 
