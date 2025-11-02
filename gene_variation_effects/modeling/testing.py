@@ -37,6 +37,11 @@ def test_model(
 
     model.eval()
 
+    # Move this to another file and join with function in train.py
+    def logits_to_prediction(logits: torch.Tensor) -> torch.Tensor:
+        return (torch.sigmoid(logits) >= PATHOGENIC_THRESHOLD).type(torch.int)
+    PATHOGENIC_THRESHOLD = 0.5
+
     if criterion is None:
         criterion = torch.nn.BCEWithLogitsLoss()
 
@@ -54,7 +59,7 @@ def test_model(
             loss = criterion(predictions, batch_y)
 
             total_loss += loss.item() * batch_y.size(0)
-            total_correct += ((predictions >= 0.5).type(torch.int) == batch_y).float().sum()
+            total_correct += (logits_to_prediction(predictions) == batch_y).float().sum()
             total_samples += batch_y.size(0)
 
     avg_loss = total_loss / total_samples

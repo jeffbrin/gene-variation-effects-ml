@@ -2,6 +2,7 @@ from loguru import logger
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
+from sklearn import metrics
 
 from typing import Optional, Any
 
@@ -49,10 +50,14 @@ def run_training_loop(
         A dictionary representation of the model parameters with the best validation loss, training losses by epoch, validation losses by epoch, training accuracy by epoch, and validation accuracy by epoch.
     """
     
+    def logits_to_prediction(logits: torch.Tensor) -> torch.Tensor:
+        return (torch.sigmoid(logits) >= PATHOGENIC_THRESHOLD).type(torch.int)
+
     model.train()
+    PATHOGENIC_THRESHOLD = 0.5
 
     if criterion is None:
-        criterion = torch.nn.BCEWithLogitsLoss(weight=torch.tensor([1.0])) # Increase positive class weight
+        criterion = torch.nn.BCEWithLogitsLoss(weight=torch.tensor(1.0)) # Increase positive class weight
     if optimizer is None:
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
@@ -69,21 +74,27 @@ def run_training_loop(
     train_loader = DataLoader(training_data, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(validation_data, batch_size=batch_size * 2)
 
+    all_training_predictions_logits = []
+    all_val_predictions_logits = []
+
     for epoch, ((epoch_training_X, epoch_training_y), (epoch_val_X, epoch_val_y)) in enumerate(zip(train_loader, val_loader)):
         training_predictions = model(epoch_training_X, embedding_features_columns)
-        loss = criterion(training_predictions, epoch_training_y)
+        all_training_predictions_logits.extend(training_predictions.detach())
+        loss = criterion(training_predictions, epoch_training_y.detach())
         loss.backward()
         optimizer.step()
 
         with torch.no_grad():
             validation_predictions = model(epoch_val_X, embedding_features_columns)
+            all_val_predictions_logits.extend(validation_predictions)
             validation_loss = criterion(validation_predictions, epoch_val_y)
 
         training_losses.append(loss.detach())
         validation_losses.append(validation_loss.detach())
 
-        epoch_accuracy = ((training_predictions >= 0.5).type(torch.int) == epoch_training_y).float().mean()
-        epoch_val_accuracy = ((validation_predictions >= 0.5).type(torch.int) == epoch_val_y).float().mean()
+
+        epoch_accuracy = (logits_to_prediction(training_predictions) == epoch_training_y).float().mean()
+        epoch_val_accuracy = (logits_to_prediction(validation_predictions) == epoch_val_y).float().mean()
 
         training_accuracies.append(epoch_accuracy.detach())
         val_accuracies.append(epoch_val_accuracy.detach())
@@ -105,7 +116,13 @@ def run_training_loop(
             logger.info(f"Validation loss has not improved in {patience} epochs. Prematurely ending training at epoch {epoch+1}")
             break
 
-    return optimal_model_dict, training_losses, validation_losses, training_accuracies, val_accuracies
+    all_training_predictions = logits_to_prediction(torch.Tensor(all_training_predictions_logits))
+    all_val_predictions = logits_to_prediction(torch.Tensor(all_val_predictions_logits))
+    train_confusion_matrix = metrics.confusion_matrix(training_labels[:len(all_training_predictions)], all_training_predictions)
+    val_confusion_matrix = metrics.confusion_matrix(validation_labels[:len(all_val_predictions)], all_val_predictions)
+    
+
+    return optimal_model_dict, training_losses, validation_losses, training_accuracies, val_accuracies, train_confusion_matrix, val_confusion_matrix
     
 
         
