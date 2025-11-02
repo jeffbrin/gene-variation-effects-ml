@@ -1,8 +1,9 @@
 from loguru import logger
 import torch
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader, TensorDataset, WeightedRandomSampler
 import numpy as np
 from sklearn import metrics
+import matplotlib.pyplot as plt
 
 from typing import Optional, Any
 
@@ -71,30 +72,42 @@ def run_training_loop(
     training_data = TensorDataset(training_X, training_labels)
     validation_data = TensorDataset(validation_X, validation_labels)
 
-    train_loader = DataLoader(training_data, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(validation_data, batch_size=batch_size * 2)
+    bincount = torch.bincount(training_labels.flatten().long())
+    class_weights = 1 / bincount # 9:1 ratio in dataset
+    sample_weights_training = class_weights[training_labels.flatten().long()]
+    training_sampler = WeightedRandomSampler(sample_weights_training, len(training_labels), replacement=True)
+    sample_weights_val = class_weights[validation_labels.flatten().long()]
+    val_sampler = WeightedRandomSampler(sample_weights_val, len(validation_labels), replacement=True)
+
+    train_loader = DataLoader(training_data, batch_size=batch_size, shuffle=(training_sampler is None), sampler=training_sampler)
+    val_loader = DataLoader(validation_data, batch_size=batch_size * 2, sampler=val_sampler)
 
     all_training_predictions_logits = []
     all_val_predictions_logits = []
+    training_y_batches = []
+    val_y_batches = []
 
-    for epoch, ((epoch_training_X, epoch_training_y), (epoch_val_X, epoch_val_y)) in enumerate(zip(train_loader, val_loader)):
-        training_predictions = model(epoch_training_X, embedding_features_columns)
+    for epoch, ((training_X_batch, training_y_batch), (val_X_batch, val_y_batch)) in enumerate(zip(train_loader, val_loader)):
+        training_y_batches.append(training_y_batch)
+        val_y_batches.append(training_y_batch)
+        
+        training_predictions = model(training_X_batch, embedding_features_columns)
         all_training_predictions_logits.extend(training_predictions.detach())
-        loss = criterion(training_predictions, epoch_training_y.detach())
+        loss = criterion(training_predictions, training_y_batch.detach())
         loss.backward()
         optimizer.step()
 
         with torch.no_grad():
-            validation_predictions = model(epoch_val_X, embedding_features_columns)
+            validation_predictions = model(val_X_batch, embedding_features_columns)
             all_val_predictions_logits.extend(validation_predictions)
-            validation_loss = criterion(validation_predictions, epoch_val_y)
+            validation_loss = criterion(validation_predictions, val_y_batch)
 
         training_losses.append(loss.detach())
         validation_losses.append(validation_loss.detach())
 
 
-        epoch_accuracy = (logits_to_prediction(training_predictions) == epoch_training_y).float().mean()
-        epoch_val_accuracy = (logits_to_prediction(validation_predictions) == epoch_val_y).float().mean()
+        epoch_accuracy = (logits_to_prediction(training_predictions) == training_y_batch).float().mean()
+        epoch_val_accuracy = (logits_to_prediction(validation_predictions) == val_y_batch).float().mean()
 
         training_accuracies.append(epoch_accuracy.detach())
         val_accuracies.append(epoch_val_accuracy.detach())
@@ -121,6 +134,31 @@ def run_training_loop(
     train_confusion_matrix = metrics.confusion_matrix(training_labels[:len(all_training_predictions)], all_training_predictions)
     val_confusion_matrix = metrics.confusion_matrix(validation_labels[:len(all_val_predictions)], all_val_predictions)
     
+    # Visualize sampling distribution
+    positive_targets_per_batch_training = [sum(batch)[0] for batch in training_y_batches]
+    negative_targets_per_batch_training = [len(batch)-positives for batch, positives in zip(training_y_batches, positive_targets_per_batch_training)]
+    positive_targets_per_batch_val = [sum(batch)[0] for batch in val_y_batches]
+    negative_targets_per_batch_val = [len(batch)-positives for batch, positives in zip(val_y_batches, positive_targets_per_batch_val)]
+
+    bar_width = 0.35
+    batches = np.array(range(1, len(training_y_batches)+1))
+    plt.bar(batches, negative_targets_per_batch_training, bar_width, label="0")
+    plt.bar(batches+bar_width, positive_targets_per_batch_training, bar_width, label="1")
+    # plt.xticks(batches, batches + 1)
+    plt.title("Sampling Proportions in Training Data")
+    plt.legend()
+    plt.show()
+    plt.clf()
+
+    bar_width = 0.35
+    batches = np.array(range(1, len(val_y_batches)+1))
+    plt.bar(batches, negative_targets_per_batch_val, bar_width, label="0")
+    plt.bar(batches+bar_width, positive_targets_per_batch_val, bar_width, label="1")
+    # plt.xticks(batches, batches + 1)
+    plt.title("Sampling Proportions in Validation Data")
+    plt.legend()
+    plt.show()
+    plt.clf()
 
     return optimal_model_dict, training_losses, validation_losses, training_accuracies, val_accuracies, train_confusion_matrix, val_confusion_matrix
     
