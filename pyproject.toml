@@ -26,6 +26,7 @@ dependencies = [
     "numpy",
     "pandas",
     "pip",
+    "pyliftover>=0.4.1",
     "python-dotenv",
     "ruff",
     "scikit-learn",

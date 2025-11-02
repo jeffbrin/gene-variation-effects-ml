@@ -52,7 +52,7 @@ def run_training_loop(
     model.train()
 
     if criterion is None:
-        criterion = torch.nn.BCEWithLogitsLoss()
+        criterion = torch.nn.BCEWithLogitsLoss(weight=torch.tensor([1.0])) # Increase positive class weight
     if optimizer is None:
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
