@@ -23,6 +23,7 @@ dependencies = [
     "loguru",
     "matplotlib",
     "mkdocs",
+    "myvariant>=1.0.0",
     "notebook",
     "numpy",
     "pandas",
