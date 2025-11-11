@@ -6,14 +6,14 @@ class MLP(nn.Module):
     def __init__(self, embedding_dimension_mapping : np.ndarray, hidden_sizes : list[int], input_size : int, dropout: float = 0.1) -> None:
         """
         Initalizes neural network and embedding layers for high cardinality categorical variables
-        
+
         Args:
             embedding_dimension_mapping (np.ndarray): 2d array of shape (FEATURES, 2) where we have features that require embedding as rows, number
             of unique categories as index 0 of columns and dimension of output embedding as index 1. Order of features as rows is:
             'GeneSymbol', 'Cytogenetic', 'ReferenceAlleleVCF', and 'AlternateAlleleVCF'
             hidden_size (list[int]) : Length of the list indicates the number of layers and int values says number of neurons excluding input and output layers
             input_size (int) : size of input layer after embedding of high cardinality categories #TODO probably a better way to do this instead of having it as input. Maybe calculate the input dim in the init
-        """        
+        """
         super().__init__()
         embedding_networks = []
         EMB_INPUT_DIMENSION_INDEX = 0
