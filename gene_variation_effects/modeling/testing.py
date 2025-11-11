@@ -60,9 +60,13 @@ def test_model(
     training_sampler = WeightedRandomSampler(sample_weights, len(labels), replacement=True)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, sampler=training_sampler)
 
+    all_preditions = []
+    all_targets = []
     with torch.no_grad():
         for batch_X, batch_y in test_loader:
             predictions = model(batch_X, embedding_features_columns)
+            all_preditions.extend(predictions)
+            all_targets.extend(batch_y)
             loss = criterion(predictions, batch_y)
 
             total_loss += loss.item() * batch_y.size(0)
@@ -72,7 +76,7 @@ def test_model(
     avg_loss = total_loss / total_samples
     accuracy = total_correct / total_samples
 
-    return avg_loss, accuracy
+    return avg_loss, accuracy, all_preditions, all_targets
     
 
         
