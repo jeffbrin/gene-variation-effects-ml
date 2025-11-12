@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import TensorDataset, DataLoader, WeightedRandomSampler
 import numpy as np
+from .utils import generate_confusion_matrix, calculate_f_score_from_conf_matrix, logits_to_prediction
 
 from typing import Optional
 
@@ -40,10 +41,6 @@ def test_model(
     """
 
     model.eval()
-
-    # Move this to another file and join with function in train.py
-    def logits_to_prediction(logits: torch.Tensor) -> torch.Tensor:
-        return (torch.sigmoid(logits) >= positive_threshold).type(torch.int)
     
 
     if criterion is None:
@@ -63,6 +60,7 @@ def test_model(
 
     all_preditions = []
     all_targets = []
+    total_f_score = 0
     with torch.no_grad():
         for batch_X, batch_y in test_loader:
             predictions = model(batch_X, embedding_features_columns, unique_gene_lists)
@@ -71,13 +69,18 @@ def test_model(
             loss = criterion(predictions, batch_y)
 
             total_loss += loss.item() * batch_y.size(0)
-            total_correct += (logits_to_prediction(predictions) == batch_y).float().sum()
+            total_correct += (logits_to_prediction(predictions, positive_threshold) == batch_y).float().sum()
             total_samples += batch_y.size(0)
+
+            confusion_matrix = generate_confusion_matrix(logits_to_prediction(predictions, positive_threshold), batch_y)
+            f_score = calculate_f_score_from_conf_matrix(confusion_matrix)
+            total_f_score += f_score * batch_y.size(0)
 
     avg_loss = total_loss / total_samples
     accuracy = total_correct / total_samples
+    avg_f_score = total_f_score / total_samples
 
-    return avg_loss, accuracy, all_preditions, all_targets
+    return avg_loss, accuracy, all_preditions, all_targets, avg_f_score
     
 
         

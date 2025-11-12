@@ -106,7 +106,7 @@ class NNPipeLine():
 
         return data_df.to_numpy(), data_df.columns
     
-    def get_embedding_input_sizes(feature_processor: ColumnTransformer) -> list[int]:
+    def get_embedding_input_sizes(self, feature_processor: ColumnTransformer) -> list[int]:
         # Getting input sizes for embedding layer
         embedding_processor = feature_processor.named_transformers_['high_cardinality']
         label_encoder = embedding_processor.named_steps['label_encode']

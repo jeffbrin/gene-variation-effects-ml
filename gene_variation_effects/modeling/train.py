@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset, WeightedRandomSampler
 import numpy as np
 import matplotlib.pyplot as plt
-from .utils import logits_to_prediction
+from .utils import logits_to_prediction, calculate_f_score_from_conf_matrix, generate_confusion_matrix
 
 from typing import Optional, Any
 
@@ -94,6 +94,7 @@ def run_training_loop(
     all_val_predictions_logits = []
     training_y_batches = []
     val_y_batches = []
+    val_f_scores = []
 
     for epoch, ((training_X_batch, training_y_batch), (val_X_batch, val_y_batch)) in enumerate(zip(train_loader, val_loader)):
         training_y_batches.append(training_y_batch)
@@ -125,6 +126,12 @@ def run_training_loop(
         training_accuracies.append(epoch_accuracy.detach())
         val_accuracies.append(epoch_val_accuracy.detach())
 
+        # Calculate F Score
+        val_conf_matrix = generate_confusion_matrix(logits_to_prediction(validation_predictions, positive_threshold), val_y_batch)
+        f_score = calculate_f_score_from_conf_matrix(val_conf_matrix)
+        val_f_scores.append(f_score)
+
+        logger.info(f"Epoch {epoch+1} validation F Score={f_score:.4f}")
         logger.info(f"Epoch {epoch+1}: accuracy={epoch_accuracy.item():.4f}")
         logger.info(f"Epoch {epoch+1}: validation accuracy={epoch_val_accuracy.item():.4f}")
         logger.info(f"Epoch {epoch+1}: validation loss={validation_loss.item():.4f}")
@@ -174,6 +181,22 @@ def run_training_loop(
         plt.show()
         plt.clf()
 
+        plt.plot(training_losses, label="Training")
+        plt.plot(validation_losses, label="Validation")
+        plt.title("Training vs Validation Loss")
+        plt.xlabel("Epoch")
+        plt.ylabel("Loss")
+        plt.legend()
+        plt.show()
+        plt.clf()
+
+        plt.plot(val_f_scores, color="darkorange")
+        plt.title(f"Validation F Scores (Threshold ({positive_threshold}))")
+        plt.xlabel("Epoch")
+        plt.ylabel("F Score")
+        plt.show()
+        plt.clf()
+
         plt.plot(training_accuracies, label="Training")
         plt.plot(val_accuracies, label="Validation")
         plt.title(f"Training vs Validation Accuracy, Threshold ({positive_threshold})")
@@ -183,7 +206,7 @@ def run_training_loop(
         plt.show()
         plt.clf()
 
-    return optimal_model_dict, training_losses, validation_losses, all_training_predictions_logits, all_val_predictions_logits, np.concatenate(training_y_batches), np.concatenate(val_y_batches)
+    return optimal_model_dict, all_training_predictions_logits, all_val_predictions_logits, np.concatenate(training_y_batches), np.concatenate(val_y_batches)
     
 
         
