@@ -10,6 +10,7 @@ def test_model(
         X: torch.Tensor, 
         labels: np.ndarray,
         embedding_features_columns: list[int],
+        unique_gene_lists,
         positive_threshold: float = 0.5,
         criterion: Optional[torch.nn.modules.loss._Loss] = None) -> tuple[float, float]:
     """
@@ -64,7 +65,7 @@ def test_model(
     all_targets = []
     with torch.no_grad():
         for batch_X, batch_y in test_loader:
-            predictions = model(batch_X, embedding_features_columns)
+            predictions = model(batch_X, embedding_features_columns, unique_gene_lists)
             all_preditions.extend(predictions)
             all_targets.extend(batch_y)
             loss = criterion(predictions, batch_y)

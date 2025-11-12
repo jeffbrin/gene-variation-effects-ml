@@ -4,7 +4,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 import numpy as np
-
+from pandas import Series, DataFrame
 
 
 class NNPipeLine():
@@ -67,5 +67,18 @@ class NNPipeLine():
             ],
             remainder = 'passthrough'
         )
-        return feature_processor.fit_transform(X_train), feature_processor    
+        return feature_processor.fit_transform(X_train).astype(float), feature_processor    
     
+    def split_multi_value_feature(self, data: DataFrame, feature: str) -> DataFrame:
+        # Split each GeneSymbol into multiple rows
+        column_index = list(data.columns).index(feature)
+        s = data[feature].str.split(';')
+        s = s.explode()
+        s.name = feature
+        data.drop(columns=[feature], inplace=True)
+        data = data.join(s)
+        
+        feature_column = data[feature]
+        data.drop(columns=[feature], inplace=True)
+        data.insert(column_index, feature, feature_column)
+        return data

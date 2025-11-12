@@ -14,6 +14,8 @@ def run_training_loop(
         validation_X: torch.Tensor, 
         training_labels: np.ndarray, 
         validation_labels: np.ndarray,
+        unique_gene_lists_training: list[str], 
+        unique_gene_lists_validation: list[str],
         embedding_features_columns: list[int],
         patience: int = 5,
         positive_threshold: float = 0.5,
@@ -103,14 +105,14 @@ def run_training_loop(
         val_y_batch.to(device)
 
         optimizer.zero_grad()
-        training_predictions = model(training_X_batch, embedding_features_columns)
+        training_predictions = model(training_X_batch, embedding_features_columns, unique_gene_lists_training)
         all_training_predictions_logits.extend(training_predictions.detach())
         loss = criterion(training_predictions, training_y_batch)
         loss.backward()
         optimizer.step()
 
         with torch.no_grad():
-            validation_predictions = model(val_X_batch, embedding_features_columns)
+            validation_predictions = model(val_X_batch, embedding_features_columns, unique_gene_lists_validation)
             all_val_predictions_logits.extend(validation_predictions.detach())
             validation_loss = criterion(validation_predictions, val_y_batch)
 

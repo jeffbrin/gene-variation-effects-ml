@@ -1,6 +1,7 @@
 import torch 
 import torch.nn as nn
 import numpy as np
+import pandas as pd
 
 class MLP(nn.Module):
     def __init__(self, embedding_dimension_mapping : np.ndarray, hidden_sizes : list[int], input_size : int, dropout: float = 0.1) -> None:
@@ -36,20 +37,46 @@ class MLP(nn.Module):
         
         self.layers = nn.ModuleList(layers)
         
-    def forward(self, x : torch.Tensor, embedding_features_columns: list[int]) -> torch.Tensor:
+    def forward(self, x : torch.Tensor, embedding_features_columns: list[int], unique_gene_lists: list[str]) -> torch.Tensor:
 
         # Run embedding networks
         embedded_features_tensors = []
         for emb, column in zip(self.embedding_networks, embedding_features_columns):
-            feature_data = x[:,column].type(torch.long)
+            # Column comes as a string delimited by ";"
+            # Split them into a flat list to feed into the embedding layer, but track groups to remerge later
+            raw_feature_data = unique_gene_lists[x[:, column].type(torch.int)]
+            tokens = []
+            groups = []
+            for i, feature_data in enumerate(raw_feature_data):
+                parts = feature_data.split(';')
+                tokens.extend(parts)
+                groups.extend([i] * len(parts))
+            feature_data = torch.Tensor([float(x) for x in tokens]).type(torch.int)
+
             # Add 1 to each feature since unknown features are set to -1, which emb doesn't like
             feature_data += 1
-            embedding = emb(feature_data)
-            embedded_features_tensors.append(torch.Tensor(embedding))
+            n_groups = x.shape[0]
+            embedding = torch.Tensor(emb(feature_data))
+            result = torch.zeros((n_groups, embedding.shape[1]))
+            groups = np.array(groups)
+
+            index = 0
+            for i in range(n_groups):
+                group = groups[index]
+                group_tokens_count = 0
+                token_sum = 0
+                while index < len(groups) and groups[index] == group:
+                    group_tokens_count += 1
+                    token_sum += embedding[index]
+                    index += 1
+
+                result[i] = token_sum / group_tokens_count
+                
+            embedded_features_tensors.append(result)
 
         # Get remove original columns for embedded data and append new embedded data to the end of the input tensor
         non_embedded_columns = list(set(range(x.shape[1])).difference(embedding_features_columns))
-        x = torch.cat([x[:,non_embedded_columns]] + embedded_features_tensors, dim=1)
+        x = torch.cat([torch.Tensor(x[:,non_embedded_columns])] + embedded_features_tensors, dim=1)
 
         for layer in self.layers[:-1]:
             x = nn.functional.relu(layer(x))

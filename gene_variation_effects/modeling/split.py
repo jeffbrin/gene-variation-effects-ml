@@ -23,7 +23,7 @@ def data_shuffle_split(X : np.ndarray,
         followed with target array (y) of training, validation and test set
     """    
 
-    X, y = shuffle(X, y, random_state= seed)
+    X, y = shuffle(X, y, random_state=seed)
 
     X_rest, X_test, y_rest, y_test = train_test_split(X, y, test_size = test_size, random_state = seed)
     X_train, X_val, y_train, y_val = train_test_split(X_rest, y_rest, test_size = val_size, random_state = seed)
