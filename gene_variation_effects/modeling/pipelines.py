@@ -5,6 +5,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 import numpy as np
 from pandas import Series, DataFrame
+import torch
+import pandas as pd
 
 
 class NNPipeLine():
@@ -82,3 +84,37 @@ class NNPipeLine():
         data.drop(columns=[feature], inplace=True)
         data.insert(column_index, feature, feature_column)
         return data
+    
+    # Merge rows which were split earlier on gene symbol
+    def combine_duplicated_genesymbol_rows(self, data: np.ndarray, genesymbol_column_index: int, group_column: int) -> tuple[torch.Tensor, list[str]]:
+        columns = list(range(data.shape[1]))
+        columns[genesymbol_column_index] = 'GeneSymbol'
+        columns[-1] = group_column
+        grouped_df = pd.DataFrame(data, columns=columns).groupby(by=[group_column])
+        gene_symbol_lists = grouped_df['GeneSymbol'].apply(lambda g: ";".join(str(x) for x in g))
+        output_df = grouped_df.mean()
+        encoded_gene_lists, unique_gene_lists = pd.factorize(gene_symbol_lists)
+
+        output_df['GeneSymbol'] = encoded_gene_lists
+        columns.remove(group_column)
+        return torch.Tensor(output_df[columns].to_numpy()), unique_gene_lists
+    
+    def split_multi_features_from_data_output(self, data: np.ndarray, data_columns: list[str], group_column):
+        data_df = pd.DataFrame(data, columns=data_columns)
+        data_df = self.split_multi_value_feature(data_df, 'GeneSymbol')
+        data_df[group_column] = data_df.index.astype(int)
+
+        return data_df.to_numpy(), data_df.columns
+    
+    def get_embedding_input_sizes(feature_processor: ColumnTransformer) -> list[int]:
+        # Getting input sizes for embedding layer
+        embedding_processor = feature_processor.named_transformers_['high_cardinality']
+        label_encoder = embedding_processor.named_steps['label_encode']
+
+        extra_cat_for_potential_unknown = 1 if label_encoder.handle_unknown == 'use_encoded_value' else 0
+        if hasattr(label_encoder, "categories_"):
+            return [cat.size + extra_cat_for_potential_unknown for cat in label_encoder.categories_]
+        else:
+            return []
+
+        
