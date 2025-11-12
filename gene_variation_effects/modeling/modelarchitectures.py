@@ -39,19 +39,24 @@ class MLP(nn.Module):
         
     def forward(self, x : torch.Tensor, embedding_features_columns: list[int], unique_gene_lists: list[str]) -> torch.Tensor:
 
+        single_gene = len(unique_gene_lists) == 0
+
         # Run embedding networks
         embedded_features_tensors = []
         for emb, column in zip(self.embedding_networks, embedding_features_columns):
             # Column comes as a string delimited by ";"
             # Split them into a flat list to feed into the embedding layer, but track groups to remerge later
-            raw_feature_data = unique_gene_lists[x[:, column].type(torch.int)]
-            tokens = []
-            groups = []
-            for i, feature_data in enumerate(raw_feature_data):
-                parts = feature_data.split(';')
-                tokens.extend(parts)
-                groups.extend([i] * len(parts))
-            feature_data = torch.Tensor([float(x) for x in tokens]).type(torch.int)
+            if not single_gene:
+                raw_feature_data = unique_gene_lists[x[:, column].type(torch.int)]
+                tokens = []
+                groups = []
+                for i, feature_data in enumerate(raw_feature_data):
+                    parts = feature_data.split(';')
+                    tokens.extend(parts)
+                    groups.extend([i] * len(parts))
+                feature_data = torch.Tensor([float(x) for x in tokens]).type(torch.int)
+            else:
+                feature_data = column
 
             # Add 1 to each feature since unknown features are set to -1, which emb doesn't like
             feature_data += 1
