@@ -191,9 +191,9 @@ def run_training_loop(
         plt.clf()
 
         plt.plot(val_f_scores, color="darkorange")
-        plt.title(f"Validation F Scores (Threshold ({positive_threshold}))")
+        plt.title(f"Validation F-scores (Threshold ({positive_threshold}))")
         plt.xlabel("Epoch")
-        plt.ylabel("F Score")
+        plt.ylabel("F-score")
         plt.show()
         plt.clf()
 
