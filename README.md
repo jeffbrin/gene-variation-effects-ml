@@ -62,7 +62,7 @@ Our general variation classification model achieved an F-Score of ~76% and an ac
 ### BRCA1 Variation Classification
 Our BRCA1 variation classification model achieved an F-Score of 81.5% and an accuracy of 82.5% on our balanced test dataset. We can see from our loss, F-score and accuracy graphs, that our model is clearly learning. However, in this restrictive case, our model achieves its optimal accuracy and loss significantly earlier than in the general case. This is likely due to the fact that the predictive landscape becomes significantly more complex when trying to predict across different genes. Relevant graphs are shown below. Additionally, the model's ROC curve indicates that is performs meaningfully better than a random classifier, and the related correlation matrices demonstrate a reasonable trade-off between false positives and false negatives. This could be further skewed depending on desired behaviour by modifying the prediction threshold.
 
-![image](figures/BRCA1_Loss.png)
+![image](figures/BRCA1_loss.png)
 ![image](figures/BRCA1_Accuracy.png)
 ![image](figures/BRCA1_Validation_F_Score.png)
 ![image](figures/BRCA1_Validation_ROC.png)
